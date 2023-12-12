@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<launch>
+
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find typea_description)/urdf/typea.urdf" />
+
+    <arg name="x" default="0" />
+    <arg name="y" default="0"/>
+    <arg name="z" default="0.2938"/>
+    
+    <!-- Launch gazebo in paused -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch" >
+        <arg name="use_sim_time" value="true" />
+        <arg name="debug" value="false" />
+        <arg name="gui" value="true" />
+        <arg name="paused" value="true" />
+    </include>
+
+    <!-- Spawn robot -->
+    <node name="spawn_the_robot" pkg="gazebo_ros" type="spawn_model"  output="screen" args="-urdf -param robot_description -model typea -x $(arg x) -y $(arg y) -z $(arg z)" />
+        
+    <!-- Load the controller -->
+    <rosparam command="load" file="$(find typea_description)/config/bioloid_control.yaml"/>
+
+    <!-- Load the node controller manager -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner"  
+        output="screen" respawn="false" ns="/typea"
+        args="l_shoulder_swing_joint_position_controller l_shoulder_lateral_joint_position_controller l_elbow_joint_position_controller l_hip_twist_joint_position_controller l_hip_lateral_joint_position_controller l_hip_swing_joint_position_controller l_knee_joint_position_controller l_ankle_swing_joint_position_controller l_ankle_lateral_joint_position_controller r_shoulder_swing_joint_position_controller r_shoulder_lateral_joint_position_controller r_elbow_joint_position_controller joint_state_controller r_hip_twist_joint_position_controller r_hip_lateral_joint_position_controller r_hip_swing_joint_position_controller r_knee_joint_position_controller r_ankle_swing_joint_position_controller r_ankle_lateral_joint_position_controller --timeout 60">
+        
+    </node>
+
+      <!-- convert joint states to TF transforms for rviz, etc -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+        respawn="false" output="screen">
+        <remap from="/joint_states" to="/typea/joint_states" />
+    </node>
+
+    <node name="typea_walker" pkg="typea_description" type="walker.py" output="screen"/>
+
+</launch>
